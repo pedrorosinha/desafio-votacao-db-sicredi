@@ -28,11 +28,9 @@ public class SessaoServiceImpl implements SessaoService {
 
     @Override
     public SessaoVotacao abrirSessao(DadosCadastroSessao dados) {
-        // Verifica se pauta existe
         Pauta pauta = pautaRepository.findById(dados.pautaId())
             .orElseThrow(() -> new IllegalArgumentException("Pauta não encontrada"));
 
-        // Verifica se já existe sessão aberta para a pauta
         List<SessaoVotacao> sessoesAbertas = sessaoVotacaoRepository.findByPautaIdAndStatus(pauta.getId(), StatusSessao.ABERTA);
         if (!sessoesAbertas.isEmpty()) {
             throw new IllegalStateException("Já existe uma sessão aberta para esta pauta.");

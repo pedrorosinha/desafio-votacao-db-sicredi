@@ -139,7 +139,6 @@ class VotoServiceImplTest {
     @Test
     @DisplayName("Não deve permitir voto duplo na mesma sessão")
     void naoPermitirVotoDuplo() {
-        // Simula que o primeiro voto já existe
         when(votoRepository.findBySessaoId(1L)).thenReturn(Optional.of(new Voto()));
 
         var dados1 = new DadosCadastroVoto(1L, EscolhaVoto.SIM);
@@ -157,7 +156,6 @@ class VotoServiceImplTest {
         var voto2 = new Voto();
         voto2.setEscolha(EscolhaVoto.NAO);
 
-        // Simula votos de outra pauta (não devem ser retornados)
         when(votoRepository.findByPautaId(99L)).thenReturn(List.of());
 
         var resultado = votoService.contabilizarVotos(99L);

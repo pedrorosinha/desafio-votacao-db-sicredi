@@ -127,7 +127,6 @@ class SessaoServiceImplTest {
 
         sessaoService.atualizarSessao(dados);
 
-        // Nenhum campo alterado, apenas salvo
         verify(sessaoVotacaoRepository).save(sessao);
         assertNull(sessao.getDataAbertura());
         assertNull(sessao.getDataFechamento());
@@ -170,7 +169,6 @@ class SessaoServiceImplTest {
             new org.springframework.data.domain.PageImpl<>(java.util.Collections.singletonList(sessao));
         when(sessaoVotacaoRepository.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
 
-        // Use o sessaoService injetado pelo Mockito
         var resultado = sessaoService.listarSessoes(org.springframework.data.domain.PageRequest.of(0, 10));
         assertEquals(1, resultado.getContent().size());
         assertEquals(123L, resultado.getContent().get(0).pautaId());
@@ -285,7 +283,6 @@ class SessaoServiceImplTest {
     void abrirSessaoComDataPadrao() {
         var pauta = new Pauta();
         pauta.setId(1L);
-        // Dados sem data de abertura e fechamento
         var dados = new DadosCadastroSessao(1L, null, null);
         when(pautaRepository.findById(1L)).thenReturn(Optional.of(pauta));
         when(sessaoVotacaoRepository.findByPautaIdAndStatus(1L, StatusSessao.ABERTA))
