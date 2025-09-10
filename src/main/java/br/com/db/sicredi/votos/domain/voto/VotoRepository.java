@@ -8,8 +8,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface VotoRepository extends JpaRepository<Voto, Long> {
-    Optional<Voto> findBySessaoId(Long sessaoId);
-
-    @Query("SELECT v FROM Voto v WHERE v.sessao.pauta.id = :pautaId")
+    @Query("SELECT v FROM Voto v WHERE v.pauta.id = :pautaId")
     List<Voto> findByPautaId(@Param("pautaId") Long pautaId);
+
+    @Query("SELECT v FROM Voto v WHERE v.associado.id = :associadoId AND v.pauta.id = :pautaId")
+    Optional<Voto> findByAssociadoIdAndPautaId(@Param("associadoId") Long associadoId, @Param("pautaId") Long pautaId);
+
+    @Query("SELECT v FROM Voto v WHERE v.sessao.id = :sessaoId")
+    Optional<Voto> findBySessaoId(@Param("sessaoId") Long sessaoId);
+
+    @Query("SELECT CASE WHEN COUNT(v) > 0 THEN true ELSE false END FROM Voto v WHERE v.associado.id = :associadoId AND v.pauta.id = :pautaId")
+    boolean existsByAssociadoIdAndPautaId(@Param("associadoId") Long associadoId, @Param("pautaId") Long pautaId);
 }

@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import br.com.db.sicredi.votos.domain.enums.StatusSessao;
 
 public interface SessaoVotacaoRepository extends JpaRepository<SessaoVotacao, Long> {
-    List<SessaoVotacao> findByPautaId(Long pautaId);
-    List<SessaoVotacao> findByPautaIdAndStatus(Long pautaId, StatusSessao status);
+    List<SessaoVotacao> findByPautasId(Long pautaId);
+    List<SessaoVotacao> findByPautasIdAndStatus(Long pautaId, StatusSessao status);
 }

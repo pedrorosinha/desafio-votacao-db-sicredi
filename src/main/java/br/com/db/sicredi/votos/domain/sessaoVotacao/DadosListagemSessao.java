@@ -10,12 +10,4 @@ public record DadosListagemSessao(
     LocalDateTime dataAbertura,
     LocalDateTime dataFechamento,
     StatusSessao status
-) {
-    public DadosListagemSessao(Long id, Long pautaId, LocalDateTime dataAbertura, LocalDateTime dataFechamento, StatusSessao status) {
-        this.id = id;
-        this.pautaId = pautaId;
-        this.dataAbertura = dataAbertura;
-        this.dataFechamento = dataFechamento;
-        this.status = status;
-    }
-}
+) {}

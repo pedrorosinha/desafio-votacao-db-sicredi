@@ -1,6 +1,7 @@
 package br.com.db.sicredi.votos.domain.sessaoVotacao;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import br.com.db.sicredi.votos.domain.enums.StatusSessao;
 import br.com.db.sicredi.votos.domain.pauta.Pauta;
@@ -10,7 +11,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ManyToMany;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,13 +27,13 @@ public class SessaoVotacao {
     @Enumerated(EnumType.STRING)
     private StatusSessao status;
 
-    @ManyToOne
-    private Pauta pauta;
+    @ManyToMany
+    private List<Pauta> pautas;
 
     public SessaoVotacao() {}
 
-    public SessaoVotacao(Pauta pauta, LocalDateTime dataAbertura, LocalDateTime dataFechamento, StatusSessao status) {
-        this.pauta = pauta;
+    public SessaoVotacao(List<Pauta> pautas, LocalDateTime dataAbertura, LocalDateTime dataFechamento, StatusSessao status) {
+        this.pautas = pautas;
         this.dataAbertura = dataAbertura;
         this.dataFechamento = dataFechamento;
         this.status = status;

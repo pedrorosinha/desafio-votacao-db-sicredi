@@ -1,10 +1,16 @@
 package br.com.db.sicredi.votos.services;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import br.com.db.sicredi.votos.domain.associado.Associado;
+import br.com.db.sicredi.votos.domain.associado.AssociadoRepository;
 import br.com.db.sicredi.votos.domain.enums.EscolhaVoto;
 import br.com.db.sicredi.votos.domain.enums.StatusSessao;
+import br.com.db.sicredi.votos.domain.pauta.Pauta;
 import br.com.db.sicredi.votos.domain.sessaoVotacao.SessaoVotacao;
 import br.com.db.sicredi.votos.domain.sessaoVotacao.SessaoVotacaoRepository;
 import br.com.db.sicredi.votos.domain.voto.DadosCadastroVoto;
@@ -13,9 +19,6 @@ import br.com.db.sicredi.votos.domain.voto.StatusResultadoVotos;
 import br.com.db.sicredi.votos.domain.voto.Voto;
 import br.com.db.sicredi.votos.domain.voto.VotoRepository;
 import br.com.db.sicredi.votos.services.interf.VotoService;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 public class VotoServiceImpl implements VotoService {
@@ -26,14 +29,25 @@ public class VotoServiceImpl implements VotoService {
     @Autowired
     private SessaoVotacaoRepository sessaoVotacaoRepository;
 
+    @Autowired
+    private AssociadoRepository associadoRepository;
+
+
     @Override
     public void registrarVoto(DadosCadastroVoto dados) {
-        if (votoRepository.findBySessaoId(dados.sessaoId()).isPresent()) {
-            throw new IllegalStateException("Já votou nesta sessão.");
-        }
-
         SessaoVotacao sessao = sessaoVotacaoRepository.findById(dados.sessaoId())
                 .orElseThrow(() -> new IllegalArgumentException("Sessão não encontrada"));
+
+    Associado associado = associadoRepository.findById(dados.associadoId())
+        .orElseThrow(() -> new IllegalArgumentException("Associado não encontrado"));
+
+    Pauta pauta = sessao.getPautas().isEmpty() ? null : sessao.getPautas().get(0);
+    if (pauta == null) throw new IllegalArgumentException("Pauta não encontrada na sessão");
+
+    if (votoRepository.existsByAssociadoIdAndPautaId(associado.getId(), pauta.getId())) {
+        throw new IllegalStateException("Associado já votou nesta pauta.");
+    }
+
         LocalDateTime agora = LocalDateTime.now();
         if (sessao.getStatus() != StatusSessao.ABERTA ||
                 agora.isBefore(sessao.getDataAbertura()) ||
@@ -41,13 +55,15 @@ public class VotoServiceImpl implements VotoService {
             throw new IllegalStateException("Sessão de votação não está aberta.");
         }
 
-        Voto voto = new Voto();
-        voto.setId(null);
-        voto.setSessao(sessao);
-        voto.setEscolha(dados.escolha());
-        voto.setDataCriacao(agora);
+    Voto voto = new Voto();
+    voto.setId(null);
+    voto.setSessao(sessao);
+    voto.setPauta(pauta);
+    voto.setAssociado(associado);
+    voto.setEscolha(dados.escolha());
+    voto.setDataCriacao(agora);
 
-        votoRepository.save(voto);
+    votoRepository.save(voto);
     }
 
     @Override
