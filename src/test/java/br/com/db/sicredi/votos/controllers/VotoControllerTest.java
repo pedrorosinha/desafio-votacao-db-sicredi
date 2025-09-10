@@ -1,23 +1,28 @@
 package br.com.db.sicredi.votos.controllers;
 
-import br.com.db.sicredi.votos.domain.enums.EscolhaVoto;
-import br.com.db.sicredi.votos.domain.voto.DadosCadastroVoto;
-import br.com.db.sicredi.votos.domain.voto.ResultadoVotacao;
-import br.com.db.sicredi.votos.domain.voto.StatusResultadoVotos;
-import br.com.db.sicredi.votos.services.interf.VotoService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import br.com.db.sicredi.votos.domain.enums.EscolhaVoto;
+import br.com.db.sicredi.votos.domain.voto.DadosCadastroVoto;
+import br.com.db.sicredi.votos.domain.voto.ResultadoVotacao;
+import br.com.db.sicredi.votos.domain.voto.StatusResultadoVotos;
+import br.com.db.sicredi.votos.services.interf.VotoService;
 
 @WebMvcTest(VotoController.class)
 public class VotoControllerTest {
@@ -33,7 +38,7 @@ public class VotoControllerTest {
     @Test
     @DisplayName("Deve retornar 200 ao votar")
     void votar() throws Exception {
-        var dto = new DadosCadastroVoto(1L, EscolhaVoto.SIM);
+    var dto = new DadosCadastroVoto(1L, 1L, EscolhaVoto.SIM);
         mockMvc.perform(post("/votos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
@@ -44,7 +49,7 @@ public class VotoControllerTest {
     @Test
     @DisplayName("Deve retornar 400 ao votar e service lançar exceção de negócio")
     void votarServiceErroNegocio() throws Exception {
-        var dto = new DadosCadastroVoto(1L, EscolhaVoto.SIM);
+    var dto = new DadosCadastroVoto(1L, 1L, EscolhaVoto.SIM);
         doThrow(new IllegalStateException("Voto já registrado")).when(votoService).registrarVoto(any(DadosCadastroVoto.class));
         mockMvc.perform(post("/votos")
                 .contentType(MediaType.APPLICATION_JSON)

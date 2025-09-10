@@ -29,6 +29,9 @@ public class SessaoServiceImpl implements SessaoService {
 
     @Override
     public SessaoVotacao abrirSessao(DadosCadastroSessao dados) {
+        if (dados.pautaIds() == null || dados.pautaIds().isEmpty()) {
+            throw new IllegalArgumentException("Para criar uma sessão é necessário informar ao menos uma pauta");
+        }
         List<Pauta> pautas = pautaRepository.findAllById(dados.pautaIds());
         if (pautas.size() != dados.pautaIds().size()) {
             throw new IllegalArgumentException("Uma ou mais pautas não foram encontradas");
@@ -42,10 +45,12 @@ public class SessaoServiceImpl implements SessaoService {
             }
         }
 
-        var dataAbertura = dados.dataAbertura();
-        var dataFechamento = dados.dataFechamento();
+        // apply default dates when not provided
+        var dataAbertura = dados.dataAbertura() != null ? dados.dataAbertura() : LocalDateTime.now();
+        var dataFechamento = dados.dataFechamento() != null ? dados.dataFechamento() : dataAbertura.plusMinutes(1);
 
-        if (dataFechamento.isBefore(dataAbertura) || dataFechamento.isEqual(dataAbertura)) {
+        // validate ordering after defaults applied
+        if (!dataFechamento.isAfter(dataAbertura)) {
             throw new IllegalStateException("A data de fechamento deve ser após a data de abertura.");
         }
 
@@ -99,6 +104,9 @@ public class SessaoServiceImpl implements SessaoService {
     }
 
     private StatusSessao calcularStatus(LocalDateTime abertura, LocalDateTime fechamento) {
+        if (abertura == null || fechamento == null) {
+            return null;
+        }
         LocalDateTime agora = LocalDateTime.now();
         if (agora.isBefore(abertura)) {
             return StatusSessao.FECHADA;

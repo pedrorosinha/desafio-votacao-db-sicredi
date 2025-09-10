@@ -1,24 +1,37 @@
 package br.com.db.sicredi.votos.services;
 
-import br.com.db.sicredi.votos.domain.enums.StatusSessao;
-import br.com.db.sicredi.votos.domain.pauta.Pauta;
-import br.com.db.sicredi.votos.domain.pauta.PautaRepository;
-import br.com.db.sicredi.votos.domain.sessaoVotacao.*;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.*;
-
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import br.com.db.sicredi.votos.domain.enums.StatusSessao;
+import br.com.db.sicredi.votos.domain.pauta.Pauta;
+import br.com.db.sicredi.votos.domain.pauta.PautaRepository;
+import br.com.db.sicredi.votos.domain.sessaoVotacao.DadosAtualizacaoSessao;
+import br.com.db.sicredi.votos.domain.sessaoVotacao.DadosCadastroSessao;
+import br.com.db.sicredi.votos.domain.sessaoVotacao.DadosListagemSessao;
+import br.com.db.sicredi.votos.domain.sessaoVotacao.SessaoVotacao;
+import br.com.db.sicredi.votos.domain.sessaoVotacao.SessaoVotacaoRepository;
 
 @ExtendWith(MockitoExtension.class)
 class SessaoServiceImplTest {
@@ -35,16 +48,17 @@ class SessaoServiceImplTest {
     void abrirSessao() {
         var pauta = new Pauta();
         pauta.setId(1L);
-        var dados = new DadosCadastroSessao(1L, LocalDateTime.now(), LocalDateTime.now().plusMinutes(1));
-        when(pautaRepository.findById(1L)).thenReturn(Optional.of(pauta));
-        when(sessaoVotacaoRepository.findByPautaIdAndStatus(1L, StatusSessao.ABERTA))
+        var dados = new DadosCadastroSessao(java.util.List.of(1L), LocalDateTime.now(),
+                LocalDateTime.now().plusMinutes(1));
+        when(pautaRepository.findAllById(java.util.List.of(1L))).thenReturn(java.util.List.of(pauta));
+        when(sessaoVotacaoRepository.findByPautasIdAndStatus(1L, StatusSessao.ABERTA))
                 .thenReturn(Collections.emptyList());
         when(sessaoVotacaoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         SessaoVotacao sessao = sessaoService.abrirSessao(dados);
 
         assertNotNull(sessao);
-        assertEquals(pauta, sessao.getPauta());
+        assertEquals(pauta, sessao.getPautas().get(0));
         assertEquals(StatusSessao.ABERTA, sessao.getStatus());
         verify(sessaoVotacaoRepository).save(any());
     }
@@ -52,11 +66,12 @@ class SessaoServiceImplTest {
     @Test
     @DisplayName("Não deve abrir sessão se pauta não existir")
     void abrirSessaoPautaInexistente() {
-        var dados = new DadosCadastroSessao(99L, LocalDateTime.now(), LocalDateTime.now().plusMinutes(1));
-        when(pautaRepository.findById(99L)).thenReturn(Optional.empty());
+        var dados = new DadosCadastroSessao(java.util.List.of(99L), LocalDateTime.now(),
+                LocalDateTime.now().plusMinutes(1));
+        when(pautaRepository.findAllById(java.util.List.of(99L))).thenReturn(java.util.List.of());
 
         Exception ex = assertThrows(IllegalArgumentException.class, () -> sessaoService.abrirSessao(dados));
-        assertEquals("Pauta não encontrada", ex.getMessage());
+        assertEquals("Uma ou mais pautas não foram encontradas", ex.getMessage());
     }
 
     @Test
@@ -64,13 +79,14 @@ class SessaoServiceImplTest {
     void abrirSessaoJaExisteAberta() {
         var pauta = new Pauta();
         pauta.setId(1L);
-        var dados = new DadosCadastroSessao(1L, LocalDateTime.now(), LocalDateTime.now().plusMinutes(1));
-        when(pautaRepository.findById(1L)).thenReturn(Optional.of(pauta));
-        when(sessaoVotacaoRepository.findByPautaIdAndStatus(1L, StatusSessao.ABERTA))
+        var dados = new DadosCadastroSessao(java.util.List.of(1L), LocalDateTime.now(),
+                LocalDateTime.now().plusMinutes(1));
+        when(pautaRepository.findAllById(java.util.List.of(1L))).thenReturn(java.util.List.of(pauta));
+        when(sessaoVotacaoRepository.findByPautasIdAndStatus(1L, StatusSessao.ABERTA))
                 .thenReturn(Arrays.asList(new SessaoVotacao()));
 
         Exception ex = assertThrows(IllegalStateException.class, () -> sessaoService.abrirSessao(dados));
-        assertEquals("Já existe uma sessão aberta para esta pauta.", ex.getMessage());
+        assertEquals("Já existe uma sessão aberta para uma das pautas informadas.", ex.getMessage());
     }
 
     @Test
@@ -80,9 +96,9 @@ class SessaoServiceImplTest {
         pauta.setId(1L);
         var abertura = LocalDateTime.now().plusMinutes(10);
         var fechamento = abertura.minusMinutes(1);
-        var dados = new DadosCadastroSessao(1L, abertura, fechamento);
-        when(pautaRepository.findById(1L)).thenReturn(Optional.of(pauta));
-        when(sessaoVotacaoRepository.findByPautaIdAndStatus(1L, StatusSessao.ABERTA))
+        var dados = new DadosCadastroSessao(java.util.List.of(1L), abertura, fechamento);
+        when(pautaRepository.findAllById(java.util.List.of(1L))).thenReturn(java.util.List.of(pauta));
+        when(sessaoVotacaoRepository.findByPautasIdAndStatus(1L, StatusSessao.ABERTA))
                 .thenReturn(Collections.emptyList());
 
         Exception ex = assertThrows(IllegalStateException.class, () -> sessaoService.abrirSessao(dados));
@@ -140,7 +156,7 @@ class SessaoServiceImplTest {
         pauta.setId(1L);
         var sessao = new SessaoVotacao();
         sessao.setId(1L);
-        sessao.setPauta(pauta);
+        sessao.setPautas(java.util.List.of(pauta));
         sessao.setDataAbertura(LocalDateTime.now());
         sessao.setDataFechamento(LocalDateTime.now().plusMinutes(1));
         sessao.setStatus(StatusSessao.ABERTA);
@@ -160,13 +176,13 @@ class SessaoServiceImplTest {
         pauta.setId(123L);
         var sessao = new SessaoVotacao();
         sessao.setId(1L);
-        sessao.setPauta(pauta);
+        sessao.setPautas(java.util.List.of(pauta));
         sessao.setDataAbertura(java.time.LocalDateTime.now());
         sessao.setDataFechamento(java.time.LocalDateTime.now().plusMinutes(1));
         sessao.setStatus(StatusSessao.ABERTA);
 
-        org.springframework.data.domain.Page<SessaoVotacao> page =
-            new org.springframework.data.domain.PageImpl<>(java.util.Collections.singletonList(sessao));
+        org.springframework.data.domain.Page<SessaoVotacao> page = new org.springframework.data.domain.PageImpl<>(
+                java.util.Collections.singletonList(sessao));
         when(sessaoVotacaoRepository.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
 
         var resultado = sessaoService.listarSessoes(org.springframework.data.domain.PageRequest.of(0, 10));
@@ -283,9 +299,9 @@ class SessaoServiceImplTest {
     void abrirSessaoComDataPadrao() {
         var pauta = new Pauta();
         pauta.setId(1L);
-        var dados = new DadosCadastroSessao(1L, null, null);
-        when(pautaRepository.findById(1L)).thenReturn(Optional.of(pauta));
-        when(sessaoVotacaoRepository.findByPautaIdAndStatus(1L, StatusSessao.ABERTA))
+        var dados = new DadosCadastroSessao(java.util.List.of(1L), null, null);
+        when(pautaRepository.findAllById(java.util.List.of(1L))).thenReturn(java.util.List.of(pauta));
+        when(sessaoVotacaoRepository.findByPautasIdAndStatus(1L, StatusSessao.ABERTA))
                 .thenReturn(Collections.emptyList());
         when(sessaoVotacaoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -304,9 +320,9 @@ class SessaoServiceImplTest {
         pauta.setId(1L);
         var abertura = LocalDateTime.now().plusMinutes(5);
         var fechamento = abertura.plusMinutes(10);
-        var dados = new DadosCadastroSessao(1L, abertura, fechamento);
-        when(pautaRepository.findById(1L)).thenReturn(Optional.of(pauta));
-        when(sessaoVotacaoRepository.findByPautaIdAndStatus(1L, StatusSessao.ABERTA))
+        var dados = new DadosCadastroSessao(java.util.List.of(1L), abertura, fechamento);
+        when(pautaRepository.findAllById(java.util.List.of(1L))).thenReturn(java.util.List.of(pauta));
+        when(sessaoVotacaoRepository.findByPautasIdAndStatus(1L, StatusSessao.ABERTA))
                 .thenReturn(Collections.emptyList());
         when(sessaoVotacaoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 

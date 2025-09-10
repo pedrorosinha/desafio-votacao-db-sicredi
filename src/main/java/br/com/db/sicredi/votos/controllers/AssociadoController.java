@@ -35,6 +35,16 @@ public class AssociadoController {
         return ResponseEntity.ok(new DadosListagemAssociado(salvo.getId(), salvo.getNome()));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<DadosListagemAssociado> atualizar(@PathVariable Long id, @RequestBody Associado associado) {
+        if (!associadoRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        associado.setId(id);
+        Associado salvo = associadoRepository.save(associado);
+        return ResponseEntity.ok(new DadosListagemAssociado(salvo.getId(), salvo.getNome()));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         if (associadoRepository.existsById(id)) {

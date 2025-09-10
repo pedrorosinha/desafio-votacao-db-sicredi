@@ -38,16 +38,6 @@ public class VotoServiceImpl implements VotoService {
         SessaoVotacao sessao = sessaoVotacaoRepository.findById(dados.sessaoId())
                 .orElseThrow(() -> new IllegalArgumentException("Sessão não encontrada"));
 
-    Associado associado = associadoRepository.findById(dados.associadoId())
-        .orElseThrow(() -> new IllegalArgumentException("Associado não encontrado"));
-
-    Pauta pauta = sessao.getPautas().isEmpty() ? null : sessao.getPautas().get(0);
-    if (pauta == null) throw new IllegalArgumentException("Pauta não encontrada na sessão");
-
-    if (votoRepository.existsByAssociadoIdAndPautaId(associado.getId(), pauta.getId())) {
-        throw new IllegalStateException("Associado já votou nesta pauta.");
-    }
-
         LocalDateTime agora = LocalDateTime.now();
         if (sessao.getStatus() != StatusSessao.ABERTA ||
                 agora.isBefore(sessao.getDataAbertura()) ||
@@ -55,15 +45,28 @@ public class VotoServiceImpl implements VotoService {
             throw new IllegalStateException("Sessão de votação não está aberta.");
         }
 
-    Voto voto = new Voto();
-    voto.setId(null);
-    voto.setSessao(sessao);
-    voto.setPauta(pauta);
-    voto.setAssociado(associado);
-    voto.setEscolha(dados.escolha());
-    voto.setDataCriacao(agora);
+        var pautas = sessao.getPautas();
+        if (pautas == null || pautas.isEmpty()) {
+            throw new IllegalArgumentException("Pauta não encontrada na sessão");
+        }
+        Pauta pauta = pautas.get(0);
 
-    votoRepository.save(voto);
+        Associado associado = associadoRepository.findById(dados.associadoId())
+                .orElseThrow(() -> new IllegalArgumentException("Associado não encontrado"));
+
+        if (votoRepository.existsByAssociadoIdAndPautaId(associado.getId(), pauta.getId())) {
+            throw new IllegalStateException("Associado já votou nesta pauta.");
+        }
+
+        Voto voto = new Voto();
+        voto.setId(null);
+        voto.setSessao(sessao);
+        voto.setPauta(pauta);
+        voto.setAssociado(associado);
+        voto.setEscolha(dados.escolha());
+        voto.setDataCriacao(agora);
+
+        votoRepository.save(voto);
     }
 
     @Override

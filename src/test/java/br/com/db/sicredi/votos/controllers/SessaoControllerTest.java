@@ -1,11 +1,13 @@
 package br.com.db.sicredi.votos.controllers;
 
-import br.com.db.sicredi.votos.domain.sessaoVotacao.DadosAtualizacaoSessao;
-import br.com.db.sicredi.votos.domain.sessaoVotacao.DadosCadastroSessao;
-import br.com.db.sicredi.votos.domain.sessaoVotacao.SessaoVotacao;
-import br.com.db.sicredi.votos.services.interf.SessaoService;
+import java.time.LocalDateTime;
+import java.util.Collections;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
@@ -13,16 +15,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.LocalDateTime;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.util.Collections;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import br.com.db.sicredi.votos.domain.sessaoVotacao.DadosAtualizacaoSessao;
+import br.com.db.sicredi.votos.domain.sessaoVotacao.DadosCadastroSessao;
+import br.com.db.sicredi.votos.domain.sessaoVotacao.SessaoVotacao;
+import br.com.db.sicredi.votos.services.interf.SessaoService;
 
 @WebMvcTest(SessaoController.class)
 public class SessaoControllerTest {
@@ -40,7 +45,7 @@ public class SessaoControllerTest {
     void abrirSessao() throws Exception {
         var now = LocalDateTime.now().plusMinutes(1);
         var dto = new br.com.db.sicredi.votos.domain.sessaoVotacao.DadosCadastroSessao(
-                1L,
+                java.util.List.of(1L),
                 now,
                 now.plusMinutes(5));
         when(sessaoService.abrirSessao(any(DadosCadastroSessao.class))).thenReturn(new SessaoVotacao());
